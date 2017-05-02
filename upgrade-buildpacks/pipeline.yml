@@ -1,0 +1,850 @@
+cf_api_params:
+  CF_API_URI: {{cf_api_uri}}
+  CF_PASSWORD: {{cf_password}}
+  CF_USERNAME: {{cf_user}}
+jobs:
+- name: regulator
+  plan:
+  - aggregate:
+    - get: schedule
+      trigger: true
+    - get: binary-buildpack
+      params:
+        globs: []
+    - get: dotnet-core-buildpack
+      params:
+        globs: []
+    - get: go-buildpack
+      params:
+        globs: []
+    - get: java-buildpack
+      params:
+        globs: []
+    - get: nodejs-buildpack
+      params:
+        globs: []
+    - get: php-buildpack
+      params:
+        globs: []
+    - get: python-buildpack
+      params:
+        globs: []
+    - get: ruby-buildpack
+      params:
+        globs: []
+    - get: staticfile-buildpack
+      params:
+        globs: []
+    - get: tc-buildpack
+      params:
+        globs: []
+- name: stage-binary-buildpack
+  plan:
+  - aggregate:
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: cf-cli
+    - get: buildpack
+      passed:
+      - regulator
+      resource: binary-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: binary_buildpack_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-binary-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-binary-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: binary_buildpack_latest
+      TARGET_BUILDPACK_NAME: binary_buildpack
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-dotnet-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      passed:
+      - regulator
+      resource: dotnet-core-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: dotnet_core_buildpack_offline_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-dotnet-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-dotnet-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: dotnet_core_buildpack_offline_latest
+      TARGET_BUILDPACK_NAME: dotnet_core_buildpack_offline
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-go-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      passed:
+      - regulator
+      resource: go-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: go_buildpack_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-go-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-go-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: go_buildpack_latest
+      TARGET_BUILDPACK_NAME: go_buildpack
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-java-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      params:
+        globs:
+        - '*offline*'
+      passed:
+      - regulator
+      resource: java-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: java_buildpack_offline_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-java-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-java-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: java_buildpack_offline_latest
+      TARGET_BUILDPACK_NAME: java_buildpack_offline
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-nodejs-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      passed:
+      - regulator
+      resource: nodejs-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: nodejs_buildpack_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-nodejs-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-nodejs-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: nodejs_buildpack_latest
+      TARGET_BUILDPACK_NAME: nodejs_buildpack
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-php-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      passed:
+      - regulator
+      resource: php-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: php_buildpack_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-php-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-php-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: php_buildpack_latest
+      TARGET_BUILDPACK_NAME: php_buildpack
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-python-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      passed:
+      - regulator
+      resource: python-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: python_buildpack_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-python-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-python-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: python_buildpack_latest
+      TARGET_BUILDPACK_NAME: python_buildpack
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-ruby-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      passed:
+      - regulator
+      resource: ruby-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: ruby_buildpack_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-ruby-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-ruby-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: ruby_buildpack_latest
+      TARGET_BUILDPACK_NAME: ruby_buildpack
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-staticfile-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      passed:
+      - regulator
+      resource: staticfile-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: staticfile_buildpack_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-staticfile-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-staticfile-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: staticfile_buildpack_latest
+      TARGET_BUILDPACK_NAME: staticfile_buildpack
+    task: promote
+  serial_groups:
+  - cc-api
+- name: stage-tcserver-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+    - get: buildpack
+      params:
+        globs:
+        - '*offline*'
+      passed:
+      - regulator
+      resource: tc-buildpack
+      trigger: true
+  - file: pcf-pipelines/tasks/stage-buildpack/task.yml
+    params:
+      BUILDPACK_NAME: tc_buildpack_latest
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+    task: stage
+  serial_groups:
+  - cc-api
+- name: promote-tcserver-buildpack
+  plan:
+  - aggregate:
+    - get: cf-cli
+      passed:
+      - stage-tcserver-buildpack
+    - do:
+      - get: pcf-pipelines-tarball
+      - config:
+          image_resource:
+            source:
+              repository: cloudfoundry/cflinuxfs2
+            type: docker-image
+          inputs:
+          - name: pcf-pipelines-tarball
+          outputs:
+          - name: pcf-pipelines
+          platform: linux
+          run:
+            args:
+            - -c
+            - tar -xvf pcf-pipelines-tarball/*.tgz
+            path: sh
+        task: unpack-tarball
+  - file: pcf-pipelines/tasks/promote-buildpack/task.yml
+    params:
+      CF_API_URI: {{cf_api_uri}}
+      CF_PASSWORD: {{cf_password}}
+      CF_USERNAME: {{cf_user}}
+      SOURCE_BUILDPACK_NAME: tc_buildpack_latest
+      TARGET_BUILDPACK_NAME: tc_buildpack
+    task: promote
+  serial_groups:
+  - cc-api
+resource_types:
+- name: pivnet
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+  type: docker-image
+resources:
+- name: cf-cli
+  source:
+    bucket: cf-cli-releases
+    regexp: releases/v([\d\.]+)/cf-cli_.*_linux_x86-64.tgz
+    region_name: us-west-1
+  type: s3
+- name: pcf-pipelines-tarball
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: pcf-automation
+    product_version: v0.11.0
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: binary-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: Binary*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: dotnet-core-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: .NET*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: go-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: Go*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: java-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: Java*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: nodejs-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: NodeJS*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: php-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: PHP*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: python-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: Python*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: ruby-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: Ruby*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: staticfile-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: Staticfile*
+  type: pivnet
+- check_every: {{pivnet_poll_interval}}
+  name: tc-buildpack
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: buildpacks
+    product_version: tc Server*
+  type: pivnet
+- name: schedule
+  source:
+    days:
+    - Sunday
+    - Monday
+    - Tuesday
+    - Wednesday
+    - Thursday
+    - Friday
+    - Saturday
+    interval: 30m
+    location: America/Los_Angeles
+    start: 12:00 AM
+    stop: 11:59 PM
+  type: time
